@@ -43,7 +43,7 @@
         }
         td {
             font-family: 'Courier New', Courier, monospace;
-            word-break: break-all; /* 長い文字列を折り返す */
+            word-break: break-all;
         }
         .live-update {
             font-weight: bold;
@@ -111,7 +111,15 @@
                     <th>バッテリー残量 <span class="live-update">(リアルタイム)</span></th>
                     <td id="batteryLevel"></td>
                 </tr>
-            </tbody>
+                <tr>
+                    <th>ネットワークの種類 <span class="live-update">(リアルタイム)</span></th>
+                    <td id="networkType"></td>
+                </tr>
+                <tr>
+                    <th>通信速度の目安</th>
+                    <td id="networkSpeed"></td>
+                </tr>
+                </tbody>
         </table>
     </div>
 
@@ -130,42 +138,25 @@
             touchSupport: document.getElementById('touchSupport'),
             batteryCharging: document.getElementById('batteryCharging'),
             batteryLevel: document.getElementById('batteryLevel'),
+            // ▼▼▼ ここから追加 ▼▼▼
+            networkType: document.getElementById('networkType'),
+            networkSpeed: document.getElementById('networkSpeed'),
+            // ▲▲▲ ここまで追加 ▲▲▲
         };
 
         // 情報を取得して表示する関数
         function updateAllInfo() {
-            // ユーザーエージェント
             elements.userAgent.textContent = navigator.userAgent;
-
-            // 言語
             elements.language.textContent = navigator.language || navigator.userLanguage;
-
-            // オンライン状態
             updateOnlineStatus();
-
-            // Cookie
             elements.cookieEnabled.textContent = navigator.cookieEnabled ? 'はい 👍' : 'いいえ 👎';
-
-            // 画面解像度
             elements.screenResolution.textContent = `${screen.width} x ${screen.height} ピクセル`;
-            
-            // ウィンドウサイズ
             updateViewportSize();
-            
-            // ピクセル比
             elements.devicePixelRatio.textContent = window.devicePixelRatio || 1;
-
-            // CPUコア数
             elements.cpuCores.textContent = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} コア` : '情報なし';
-
-            // デバイスメモリ
             elements.deviceMemory.textContent = navigator.deviceMemory ? `約 ${navigator.deviceMemory} GB` : '情報なし (Chrome系のみ対応)';
-            
-            // タッチサポート
             elements.touchSupport.textContent = ('ontouchstart' in window || navigator.maxTouchPoints > 0) ? 'はい 👆' : 'いいえ';
         }
-        
-        // --- リアルタイム更新用の関数 ---
         
         // ウィンドウサイズ
         function updateViewportSize() {
@@ -183,6 +174,24 @@
             elements.batteryLevel.textContent = `${Math.floor(battery.level * 100)}%`;
         }
 
+        // ▼▼▼ ここから追加 ▼▼▼
+        // ネットワーク情報
+        function updateNetworkInfo() {
+            // 古いブラウザにも対応できるように、複数の書き方を試す
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (connection) {
+                // effectiveTypeは実際の回線速度を考慮した種類（4g, 3g, slow-2gなど）
+                elements.networkType.textContent = connection.effectiveType ? connection.effectiveType.toUpperCase() : '情報なし';
+                // downlinkは下り速度の推定値（Mbps）
+                elements.networkSpeed.textContent = connection.downlink ? `約 ${connection.downlink} Mbps` : '情報なし';
+            } else {
+                 elements.networkType.textContent = 'このブラウザでは取得できません';
+                 elements.networkSpeed.textContent = 'このブラウザでは取得できません';
+            }
+        }
+        // ▲▲▲ ここまで追加 ▲▲▲
+
+
         // --- イベントリスナーを設定 ---
 
         // ページが読み込まれたら、まず全ての情報を表示
@@ -192,10 +201,7 @@
             // バッテリーAPIの処理
             if ('getBattery' in navigator) {
                 navigator.getBattery().then(battery => {
-                    // 初期表示
                     updateBatteryInfo(battery);
-                    
-                    // バッテリーの状態が変わったら更新
                     battery.addEventListener('chargingchange', () => updateBatteryInfo(battery));
                     battery.addEventListener('levelchange', () => updateBatteryInfo(battery));
                 });
@@ -203,12 +209,22 @@
                 elements.batteryCharging.textContent = 'このブラウザでは取得できません';
                 elements.batteryLevel.textContent = 'このブラウザでは取得できません';
             }
+            
+            // ▼▼▼ ここから追加 ▼▼▼
+            // ネットワークAPIの処理
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (connection) {
+                updateNetworkInfo(); // まず一度表示
+                // ネットワーク状態が変わったら、情報を更新する
+                connection.addEventListener('change', updateNetworkInfo);
+            } else {
+                elements.networkType.textContent = 'このブラウザでは取得できません';
+                elements.networkSpeed.textContent = 'このブラウザでは取得できません';
+            }
+            // ▲▲▲ ここまで追加 ▲▲▲
         });
         
-        // ウィンドウサイズが変わったら更新
         window.addEventListener('resize', updateViewportSize);
-
-        // オンライン/オフラインが切り替わったら更新
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
 
