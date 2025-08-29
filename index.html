@@ -112,14 +112,18 @@
                     <td id="batteryLevel"></td>
                 </tr>
                 <tr>
-                    <th>ネットワークの種類 <span class="live-update">(リアルタイム)</span></th>
-                    <td id="networkType"></td>
+                    <th>物理的な接続の種類 <span class="live-update">(リアルタイム)</span></th>
+                    <td id="connectionType"></td>
+                </tr>
+                <tr>
+                    <th>ネットワークの体感速度</th>
+                    <td id="networkEffectiveType"></td>
                 </tr>
                 <tr>
                     <th>通信速度の目安</th>
                     <td id="networkSpeed"></td>
                 </tr>
-                </tbody>
+            </tbody>
         </table>
     </div>
 
@@ -138,10 +142,9 @@
             touchSupport: document.getElementById('touchSupport'),
             batteryCharging: document.getElementById('batteryCharging'),
             batteryLevel: document.getElementById('batteryLevel'),
-            // ▼▼▼ ここから追加 ▼▼▼
-            networkType: document.getElementById('networkType'),
+            connectionType: document.getElementById('connectionType'),
+            networkEffectiveType: document.getElementById('networkEffectiveType'),
             networkSpeed: document.getElementById('networkSpeed'),
-            // ▲▲▲ ここまで追加 ▲▲▲
         };
 
         // 情報を取得して表示する関数
@@ -177,16 +180,31 @@
         // ▼▼▼ ここから追加 ▼▼▼
         // ネットワーク情報
         function updateNetworkInfo() {
-            // 古いブラウザにも対応できるように、複数の書き方を試す
             const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
             if (connection) {
-                // effectiveTypeは実際の回線速度を考慮した種類（4g, 3g, slow-2gなど）
-                elements.networkType.textContent = connection.effectiveType ? connection.effectiveType.toUpperCase() : '情報なし';
-                // downlinkは下り速度の推定値（Mbps）
+                // 【物理的な接続】を取得 (wifi, cellular など)
+                let typeText = '情報なし';
+                if (connection.type) {
+                    switch (connection.type) {
+                        case 'wifi': typeText = 'Wi-Fi 📶'; break;
+                        case 'cellular': typeText = '携帯回線 📱'; break;
+                        case 'ethernet': typeText = '有線LAN 🔌'; break;
+                        case 'bluetooth': typeText = 'Bluetooth'; break;
+                        case 'none': typeText = '接続なし'; break;
+                        default: typeText = connection.type;
+                    }
+                }
+                elements.connectionType.textContent = typeText;
+
+                // 【体感速度】 (4g, 3g など)
+                elements.networkEffectiveType.textContent = connection.effectiveType ? connection.effectiveType.toUpperCase() : '情報なし';
+                
+                // 【速度の目安】 (Mbps)
                 elements.networkSpeed.textContent = connection.downlink ? `約 ${connection.downlink} Mbps` : '情報なし';
             } else {
-                 elements.networkType.textContent = 'このブラウザでは取得できません';
-                 elements.networkSpeed.textContent = 'このブラウザでは取得できません';
+                 elements.connectionType.textContent = '取得できません';
+                 elements.networkEffectiveType.textContent = '取得できません';
+                 elements.networkSpeed.textContent = '取得できません';
             }
         }
         // ▲▲▲ ここまで追加 ▲▲▲
@@ -214,12 +232,12 @@
             // ネットワークAPIの処理
             const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
             if (connection) {
-                updateNetworkInfo(); // まず一度表示
-                // ネットワーク状態が変わったら、情報を更新する
+                updateNetworkInfo();
                 connection.addEventListener('change', updateNetworkInfo);
             } else {
-                elements.networkType.textContent = 'このブラウザでは取得できません';
-                elements.networkSpeed.textContent = 'このブラウザでは取得できません';
+                elements.connectionType.textContent = '取得できません';
+                elements.networkEffectiveType.textContent = '取得できません';
+                elements.networkSpeed.textContent = '取得できません';
             }
             // ▲▲▲ ここまで追加 ▲▲▲
         });
