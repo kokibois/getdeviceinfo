@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>端末・ブラウザ情報チェッカー</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.8;
+            background-color: #f4f7f9;
+            color: #333;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            text-align: left;
+        }
+        th {
+            background-color: #ecf0f1;
+            font-weight: 600;
+            width: 35%;
+        }
+        td {
+            font-family: 'Courier New', Courier, monospace;
+            word-break: break-all; /* 長い文字列を折り返す */
+        }
+        .live-update {
+            font-weight: bold;
+            color: #e67e22;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>端末・ブラウザ情報チェッカー リアルタイム版 🚀</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>情報項目</th>
+                    <th>値</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>ユーザーエージェント</th>
+                    <td id="userAgent"></td>
+                </tr>
+                <tr>
+                    <th>ブラウザの言語</th>
+                    <td id="language"></td>
+                </tr>
+                <tr>
+                    <th>オンライン状態 <span class="live-update">(リアルタイム)</span></th>
+                    <td id="onlineStatus"></td>
+                </tr>
+                <tr>
+                    <th>Cookieは有効？</th>
+                    <td id="cookieEnabled"></td>
+                </tr>
+                <tr>
+                    <th>画面の解像度</th>
+                    <td id="screenResolution"></td>
+                </tr>
+                 <tr>
+                    <th>ウィンドウの表示領域 <span class="live-update">(リアルタイム)</span></th>
+                    <td id="viewportSize"></td>
+                </tr>
+                <tr>
+                    <th>ピクセル比</th>
+                    <td id="devicePixelRatio"></td>
+                </tr>
+                <tr>
+                    <th>CPUコア数</th>
+                    <td id="cpuCores"></td>
+                </tr>
+                <tr>
+                    <th>デバイスメモリ (推定)</th>
+                    <td id="deviceMemory"></td>
+                </tr>
+                <tr>
+                    <th>タッチ操作は可能？</th>
+                    <td id="touchSupport"></td>
+                </tr>
+                <tr>
+                    <th>バッテリー充電中？ <span class="live-update">(リアルタイム)</span></th>
+                    <td id="batteryCharging"></td>
+                </tr>
+                <tr>
+                    <th>バッテリー残量 <span class="live-update">(リアルタイム)</span></th>
+                    <td id="batteryLevel"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // DOM要素をあらかじめ取得しておく
+        const elements = {
+            userAgent: document.getElementById('userAgent'),
+            language: document.getElementById('language'),
+            onlineStatus: document.getElementById('onlineStatus'),
+            cookieEnabled: document.getElementById('cookieEnabled'),
+            screenResolution: document.getElementById('screenResolution'),
+            viewportSize: document.getElementById('viewportSize'),
+            devicePixelRatio: document.getElementById('devicePixelRatio'),
+            cpuCores: document.getElementById('cpuCores'),
+            deviceMemory: document.getElementById('deviceMemory'),
+            touchSupport: document.getElementById('touchSupport'),
+            batteryCharging: document.getElementById('batteryCharging'),
+            batteryLevel: document.getElementById('batteryLevel'),
+        };
+
+        // 情報を取得して表示する関数
+        function updateAllInfo() {
+            // ユーザーエージェント
+            elements.userAgent.textContent = navigator.userAgent;
+
+            // 言語
+            elements.language.textContent = navigator.language || navigator.userLanguage;
+
+            // オンライン状態
+            updateOnlineStatus();
+
+            // Cookie
+            elements.cookieEnabled.textContent = navigator.cookieEnabled ? 'はい 👍' : 'いいえ 👎';
+
+            // 画面解像度
+            elements.screenResolution.textContent = `${screen.width} x ${screen.height} ピクセル`;
+            
+            // ウィンドウサイズ
+            updateViewportSize();
+            
+            // ピクセル比
+            elements.devicePixelRatio.textContent = window.devicePixelRatio || 1;
+
+            // CPUコア数
+            elements.cpuCores.textContent = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} コア` : '情報なし';
+
+            // デバイスメモリ
+            elements.deviceMemory.textContent = navigator.deviceMemory ? `約 ${navigator.deviceMemory} GB` : '情報なし (Chrome系のみ対応)';
+            
+            // タッチサポート
+            elements.touchSupport.textContent = ('ontouchstart' in window || navigator.maxTouchPoints > 0) ? 'はい 👆' : 'いいえ';
+        }
+        
+        // --- リアルタイム更新用の関数 ---
+        
+        // ウィンドウサイズ
+        function updateViewportSize() {
+            elements.viewportSize.textContent = `${window.innerWidth} x ${window.innerHeight} ピクセル`;
+        }
+        
+        // オンライン状態
+        function updateOnlineStatus() {
+            elements.onlineStatus.textContent = navigator.onLine ? 'オンライン 🟢' : 'オフライン 🔴';
+        }
+
+        // バッテリー情報
+        function updateBatteryInfo(battery) {
+            elements.batteryCharging.textContent = battery.charging ? '充電中 ⚡' : 'バッテリー駆動';
+            elements.batteryLevel.textContent = `${Math.floor(battery.level * 100)}%`;
+        }
+
+        // --- イベントリスナーを設定 ---
+
+        // ページが読み込まれたら、まず全ての情報を表示
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAllInfo();
+
+            // バッテリーAPIの処理
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then(battery => {
+                    // 初期表示
+                    updateBatteryInfo(battery);
+                    
+                    // バッテリーの状態が変わったら更新
+                    battery.addEventListener('chargingchange', () => updateBatteryInfo(battery));
+                    battery.addEventListener('levelchange', () => updateBatteryInfo(battery));
+                });
+            } else {
+                elements.batteryCharging.textContent = 'このブラウザでは取得できません';
+                elements.batteryLevel.textContent = 'このブラウザでは取得できません';
+            }
+        });
+        
+        // ウィンドウサイズが変わったら更新
+        window.addEventListener('resize', updateViewportSize);
+
+        // オンライン/オフラインが切り替わったら更新
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+    </script>
+</body>
+</html>
